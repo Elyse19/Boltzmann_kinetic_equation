@@ -16,12 +16,9 @@ from scipy.optimize import curve_fit
 from scipy import fft
 from joblib import Parallel, delayed
 from scipy.special import iv, gamma, factorial
-from scipy.special import roots_legendre
 import os.path
 from os import path
 plt.rcParams ['figure.dpi'] = 300
-
-
 import time
 
 
@@ -32,18 +29,14 @@ B = 0
 #Diffusion prefactor
 
 eps_max = 10**5
-    
 eps_min = 10**-12
 #Upper and lower energy bounds
-
-
 
 N = 2000
 #Number of points in external energy array
 
 nc = 16
 #Number of cores for parallelization
-
 
 epsilon = np.logspace(np.log10(eps_min),np.log10(eps_max),N)
 #Energy array used for n_eps (external energy)
@@ -59,7 +52,10 @@ def n0(e):
 #Initial condition
 
 
-##Interaction term
+###Interaction term
+
+
+##Weights and coordinates for sh th gaussian quadrature
 
 order = 4
 #Precision order
@@ -105,7 +101,7 @@ wi, wj = w_list[i_1], w_list[i_2]
 #2D meshgrids of the coordinates and weights (for I2 and I3)
 
 
-
+##Function calculating the occupation number at given n_fun, and energy values
 
 def occupation(n_func_loc, eps_loc, e1_loc, e2_loc):
     e3_loc = e1_loc + e2_loc - eps_loc
@@ -115,6 +111,8 @@ def occupation(n_func_loc, eps_loc, e1_loc, e2_loc):
     # return n_func_loc(e1_loc)*n_func_loc(e2_loc)*(n_func_loc(eps_loc) +  n_3) - n_func_loc(eps_loc)*n_3*(n_func_loc(e1_loc) + n_func_loc(e2_loc))
     return n_func_loc(e1_loc)*n_func_loc(e2_loc)*(n_func_loc(eps_loc) + 1)*(1 + n_3) - n_func_loc(eps_loc)*n_3*(n_func_loc(e1_loc) + 1)*(1 + n_func_loc(e2_loc))
 #Occupation number difference 
+
+##Integral calculations on different intervals
 
 def integral_I0(n_func_loc,eps_loc):
 
@@ -144,7 +142,6 @@ def integral_I0(n_func_loc,eps_loc):
     return integral*2
 
 def integral_I2(n_func_loc,eps_loc):
-    
   
     emin, emax = eps_loc,eps_max
     
@@ -161,7 +158,6 @@ def integral_I2(n_func_loc,eps_loc):
 
 
 def integral_I3(n_func_loc,eps_loc):
-
     
     emin_1, emax_1 = eps_loc, eps_max
     emin_2, emax_2 = eps_min, eps_loc
@@ -178,13 +174,15 @@ def integral_I3(n_func_loc,eps_loc):
 
     return integral
     
-
+##Total integral calculation for one epsilon
 
 def integral_coll(n_func_loc,eps_loc):
 
     I = integral_I0(n_func_loc,eps_loc) + integral_I2(n_func_loc,eps_loc) + 2*integral_I3(n_func_loc, eps_loc)
     
     return I
+
+##Total rhs of the ode for the interaction term
 
 def tot1(n_loc):
     
@@ -195,17 +193,17 @@ def tot1(n_loc):
     #Interpolate n_eps
     
     y_loc = np.array(Parallel(n_jobs=nc)(delayed (integral_coll)(n_func,epsilon[i]) for i in range(len(epsilon))))
-    
         
     return y_loc*A
- 
 #Parallelized loop over epsilon to have dn_eps(t)/dt (1D array)
 #Interpolation/extrapolation useful to access n(e3)
 
 
-##Diffusion term
 
-#Fonction interpolee serie
+###Diffusion term
+
+
+##Interpolation function f_i 
 
 z = np.logspace(np.log10(10**-30), np.log10(float(10**30)), 2**17)
 
@@ -218,7 +216,6 @@ def f_i(z_loc):
         return np.sum(pref_nu_m) / (2*np.pi*z_loc)**0.5
     else:
         return iv(-1/4, z_loc) * np.exp(-z_loc)
-    
 #Function that returns modified Bessel function I(z)*exp(-z) for z<30 and series expansion of order 20 for z>30
 
 res = np.array([f_i(z_loc) for z_loc in z])
@@ -228,7 +225,7 @@ Func_res = interpolate.interp1d(np.log(z), np.log(res), kind='cubic')
 def fi_R_plus(z_loc):
     return np.exp(Func_res(np.log(z_loc)))
 
-##
+##Calculation of the analytical solution for the diffusion term for one epsilon
 
 def integrande_convol(ep_loc, eps_target_loc, t_loc, n_fonc_loc):
         
@@ -259,6 +256,8 @@ def integral_convol(eps_target_loc, t_loc, n_fonc_loc):
     
     return integral
 
+##Total analytical solution corresponding to the rhs of the ode (diffusion term)
+
 def tot2(t_loc, n_loc):
     
     n_loco = np.copy(n_loc)
@@ -267,14 +266,12 @@ def tot2(t_loc, n_loc):
     n_func = interpolate.PchipInterpolator(epsilon,n_loco,extrapolate = True)
     
     y_loc = np.array(Parallel(n_jobs=nc)(delayed (integral_convol)(epsilon[i],t_loc,n_func) for i in range(len(epsilon))))
-
         
     return y_loc
 
 
 
-
-##Split-step
+###Split-step
 
 Norm0 = integrate.simpson(n0(epsilon)*np.sqrt(epsilon),epsilon)
 
@@ -285,7 +282,6 @@ dico_step = {"begin":0.01,"interm":0.05,"long":0.1}
 
 # h = dico_step["begin"]
 h = 0.001
-
 #dt time step
 
 T = 100
@@ -295,7 +291,6 @@ T = 100
 method = 'RK'
 
 time_save = 1.00
-
 
     
 print('B = ' + str(B))
@@ -320,7 +315,6 @@ i = 0
 y = n0(epsilon)
 
 
-
 while t_i <= T:
 
     ##Cas general Euler
@@ -336,23 +330,23 @@ while t_i <= T:
     
     t_data.append(t_i)
 
-    # y = tot2(h/4, np.copy(y))
+    y = tot2(h/2, np.copy(y))
     
     k1 = tot1(np.copy(y))
-    k2 = tot1(np.copy(y) + k1*h/4)
-    k3 = tot1(np.copy(y) + k2*h/4)
-    k4 = tot1(np.copy(y) + k3*h/2)
+    k2 = tot1(np.copy(y) + k1*h/2)
+    k3 = tot1(np.copy(y) + k2*h/2)
+    k4 = tot1(np.copy(y) + k3*h)
     
-    y = y + (k1/6 + k2/3 + k3/3 + k4/6)*(h/2)
+    y = y + (k1/6 + k2/3 + k3/3 + k4/6)*(h)
     
-    # y = tot2(h/4, np.copy(y))
+    y = tot2(h/2, np.copy(y))
 
     
-    ##Dans le cas A = 0
+    ## A = 0 case
     
     # y = tot2((t_i + h)/2.0, n0(epsilon))
     
-    ##Dans le cas B = 0
+    ## B = 0 case
 
     # y1 = y1 + (h/2)*tot1( np.copy(y1))
 
@@ -389,11 +383,10 @@ while t_i <= T:
     #      print(t_i)
         
     n_eps.append(y) 
-        
     Cons_N.append(Norm)     
     E_diff.append(integrate.simpson(np.copy(y)*np.sqrt(epsilon)*epsilon,epsilon))
     n_0.append(np.copy(y)[0])
-    #Values we want to study (Norm deviation, energy, n_0(t))
+    #Values we want to study (n_eps(t), Norm deviation, energy, n_0(t))
 
     np.savez_compressed(path_save,t_data,n_eps,n_0,E_diff,Cons_N)
     #Save a npz file under path_save of these values
@@ -402,6 +395,7 @@ while t_i <= T:
         n_eps.append(y)    
         print(Norm)
         print(t_i)
+        print('Norm conservation failed')
         break
     #Break loop when norm is not conserved
         

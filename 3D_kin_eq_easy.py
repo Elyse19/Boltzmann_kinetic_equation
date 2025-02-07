@@ -28,32 +28,51 @@ import time
 fig1, axs1 = plt.subplots(1,1)
 fig2, axs2 = plt.subplots(1,1)
 
-A = 1
-#Interaction prefactor
+A = 1 #Interaction prefactor
 
-N = 200
-#Number of points in energy grid 
+N = 200 #Number of points in energy grid 
 
 eps_max = 10**4
 eps_min = 10**-12
 #Upper and lower energy bounds
 
-eps0 = 1/np.sqrt(5)
-#Width of the initial gaussian (can be varied)
+eps0 = 1/np.sqrt(5) #Width of the initial gaussian 
+#Small value needed to have a BEC post-quench (otherwise thermal distribution)
+#See supplemental material
 
-pref = 2/((eps0**(3/2))*scipy.special.gamma(3/4))
-#Normalization prefactor
+pref = 2/((eps0**(3/2))*scipy.special.gamma(3/4)) #Normalization prefactor
 
 def n0(eps_loc):
-    return pref*np.exp(-(eps_loc**2/eps0**2))
-#Initial condition
+    '''
+    Parameters
+    ----------
+    eps_loc : 1D array (energy grid)
 
-nc = 8
-#Number of cores used in parallelization
-#Should not exceed number of cores present on computer
+    Returns
+    -------
+    Initial condition n_0(\epsilon): 1D array 
+
+    '''
+    return pref*np.exp(-(eps_loc**2/eps0**2))
+
+nc = 8 #Number of cores used in parallelization
+#Should not exceed number of cores present on node
 
  
 def W(eps_loc,e1_loc,e2_loc):
+    '''
+    Parameters
+    ----------
+    eps_loc : float (energy)
+    e1_loc : 2D array (local integral variable)
+    e2_loc : 2D array (local integral variable)
+
+    Returns
+    -------
+    2D array
+        Interaction kernel for a 3D interacting Bose gas
+
+    '''
     eps3_loc = e1_loc + e2_loc - eps_loc
     
     ind = (eps3_loc >= 0)
@@ -65,10 +84,23 @@ def W(eps_loc,e1_loc,e2_loc):
     L = np.minimum(b,c)
     
     return L/np.sqrt(eps_loc)
-#Interaction kernel for a 3D interacting Bose gas (2D array)
-
 
 def occupation(z, eps_loc, e1_loc, e2_loc):
+    '''
+    Parameters
+    ----------
+    z : function
+        corresponds to interpolated function n(\epsilon,t)
+    eps_loc : float 
+    e1_loc : 2D array
+    e2_loc : 2D array
+
+    Returns
+    -------
+    2D array
+        Occupation number term in the integrand
+
+    '''
     e3_loc = e1_loc + e2_loc - eps_loc
     
     n_3 = np.where((e3_loc <= eps_max)*(e3_loc >= eps_min),z(e3_loc),10**-200)
@@ -79,21 +111,30 @@ def occupation(z, eps_loc, e1_loc, e2_loc):
     
     return z(e1_loc)*z(e2_loc)*(z(eps_loc) + 1)*(1 + n_3) - z(eps_loc)*n_3*(z(e1_loc) + 1)*(1 + z(e2_loc))
     ##Quantum version with the 1s
-#Occupation number term (2D array)
 
-epsilon = np.logspace(np.log10(eps_min),np.log10(eps_max),N)
-#1D energy grid in logspace
-ind_epsilon = np.arange(0,len(epsilon),1)
-#Indices of 1D energy grid
 
-ie1,ie2 = np.meshgrid(ind_epsilon,ind_epsilon)
-#2D meshgrid of indices corresponding to epsilon_1 and epsilon_2 
-e1,e2 = epsilon[ie1],epsilon[ie2]
-#Meshgrids corresponding to the energies epsilon_1 and epsilon_2
+epsilon = np.logspace(np.log10(eps_min),np.log10(eps_max),N) #1D energy grid in logspace
+ind_epsilon = np.arange(0,len(epsilon),1) #Indices of 1D energy grid
+
+ie1,ie2 = np.meshgrid(ind_epsilon,ind_epsilon) #2D meshgrid of indices corresponding to epsilon_1 and epsilon_2 
+e1,e2 = epsilon[ie1],epsilon[ie2] #Meshgrids corresponding to the energies epsilon_1 and epsilon_2
 
    
-
 def integral_coll(z,ie):
+    '''
+    Parameters
+    ----------
+    z : function
+        corresponds to interpolated function n(\epsilon,t)
+    ie : int
+        index of epsilon_i
+
+    Returns
+    -------
+    integral : float
+        Corresponds to dn_{epsilon_i}/dt (collision integral for a single energy value)
+
+    '''
     
     I = occupation(z,epsilon[ie],e1,e2)*W(epsilon[ie],e1,e2)
     #integrand (2D)
@@ -102,10 +143,23 @@ def integral_coll(z,ie):
     #Double integral on e1 and e2
 
     return integral
-#This term corresponds to dn_{epsilon_i}/dt (collision integral) -> returns a single value
-
  
 def tot(n_loc):
+    '''
+    Main function solving ODE
+    External loop over epsilon is parallelized using joblib
+
+    Parameters
+    ----------
+    n_loc : 1D array
+        Corresponds to n_\epsilon(t-dt)
+
+    Returns
+    -------
+    1D array
+        Corresponds to n_\epsilon(t)
+
+    '''
     
     n_func = interpolate.interp1d(epsilon,n_loc,kind='quadratic',fill_value='extrapolate')
     #Standard quadratic interpolation of n_eps at time t -> gives function
@@ -123,23 +177,19 @@ def tot(n_loc):
     ##Version without parallelization
         
     return y_loc*A
-#Gives n_eps 1D array at a given time
 
-Norm0 = integrate.simpson(n0(epsilon)*np.sqrt(epsilon),epsilon)
-#Number of particles at t=0
+Norm0 = integrate.simpson(n0(epsilon)*np.sqrt(epsilon),epsilon) #Number of particles at t=0
 
 t0 = time.time()
 
-h = 0.1
-#dt time step
-#Usually dt=0.01 gives sufficiently accurate results
+h = 0.1 #dt time step
+#Usually dt=0.01 gives sufficiently accurate results at long times
 
-T = 20
-#Final time for integration
+T = 20 #Final time for integration
 
 # method = 'Euler'
 method = 'RK'
-
+#Integration method (RK is needed to have sufficiently precise results for n_0(t) : rapidly increasing function)
 
 path = ''
 
@@ -147,11 +197,11 @@ name = '3D_Boltz_'
 file_name = f"dt={h}_N={N}_Tmax={T}_emax={eps_max}_emin={eps_min}_A={A}_epsc={eps0}_tsave=every_"
 path_save = path + name + file_name + method + ".npz"
 
-n_0 = []
-tot_E = []
-Cons_N = []
-n_eps = []
-t_data = []
+n_0 = [] #Central density : n_0(t)
+tot_E = [] #Total energy E(t) (should be conserved)
+Cons_N = [] #Total number of particles N(t) (should be conserved)
+n_eps = [] #Full 2D array : n_\epsilon(t) (saved regularly)
+t_data = [] #time
 
 t_i = 0
 i = 0
@@ -161,12 +211,12 @@ Norm = Norm0
 
 while t_i <= T:
 
-    t_data.append(t_i)
-    ##list of times
+    t_data.append(t_i) #list of times
     
     if i%10 == 0 and i>0:
         print('t_i = ' + str(round(t_i,2)))
         print('Norm conservation = ' + str(Norm))
+        #Caracterizes the validity of the numerical solution
     
     
     ##Euler method
@@ -197,14 +247,15 @@ while t_i <= T:
 
     np.savez_compressed(path_save,t_data,n_eps,n_0,tot_E,Cons_N)
     #Save a npz file (compressed) under path_save with these values
-    #To use, simply use np.load(path_save) and extract files
+    #Use np.load(path_save) and extract files
     
     if Norm > 0.1 :
         n_eps.append(y)    
         print('Div')
         print('t_div = '+ str(round(t_i,2)))
         break
-    #Break loop when norm is not conserved
+    #Break loop when norm is not conserved and starts to diverge
+    #If this quantity diverges, the kinetic equation is no longer valid
         
 
 t1 = time.time()

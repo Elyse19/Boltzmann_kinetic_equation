@@ -36,7 +36,7 @@ eps_min = 10**-4
 # eps0 = 1/np.sqrt(5) #Width of the initial gaussian 
 eps0 = 6
 
-h = 0.01 #dt time step
+h = 0.1 #dt time step
 T = 10 #Final time for integration
 epsilon = np.logspace(np.log10(eps_min),np.log10(eps_max),N) #1D energy grid in logspace
 

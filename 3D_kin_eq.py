@@ -47,9 +47,13 @@ method_int = 'precise' #Integration method ('naive' or 'precise')
 #'naive' uses a standard Simpson integration method with numpy arrays
 #'precise' uses sinh tanh integration method on different integration domains
 
+method_interp = 'quadratic' #Interpolation method ('quadratic' or 'PCHIP')
+#'quadratic' interpolation is usually very good
+#'PCHIP' interpolation preserves monotony (useful for eliminating error accumulation at high energies if needed)
+
 nc = 8 #Number of cores used in parallelization (should not exceed number of cores present on node)
 
-h = 0.01 #dt time step
+h = 0.1 #dt time step
 #Usually dt=0.01 gives sufficiently accurate results (with RK4 method) at long times
 
 T = 10 #Final time for integration
@@ -100,9 +104,15 @@ def tot(n_loc):
         Corresponds to n_\epsilon(t)
 
     '''
+    n_loco = np.copy(n_loc)
+    n_loco[n_loco < 10**-200] = 10**-200
+    #Avoid error accumulation over time by fixing small values
     
-    n_func = interpolate.interp1d(epsilon,n_loc,kind='quadratic',fill_value='extrapolate')
+    if method_interp== 'quadratic':
+        n_func = interpolate.interp1d(epsilon,n_loco,kind='quadratic',fill_value='extrapolate')
     #Standard quadratic interpolation of n_eps at time t -> gives function
+    if method_interp == 'PCHIP':
+        n_func = interpolate.PchipInterpolator(epsilon,n_loco,extrapolate = True)
     
     y_loc = np.array(Parallel(n_jobs=nc)(delayed (integral_coll)(n_func,epsilon[i],epsilon,e1,e2) for i in range(len(epsilon))))
     ##Parallelization of epsilon loop with joblib
@@ -164,16 +174,15 @@ while t_i <= T:
     i += 1
     
     Norm = np.abs(integrate.simpson(np.copy(y)*np.sqrt(epsilon),epsilon)-Norm0)/Norm0 #Deviation from initial number of particles
-    
-    if i%save_neps == 0: 
-        n_eps.append(np.copy(y)) 
         
     Cons_N.append(Norm)     
     tot_E.append(integrate.simpson(np.copy(y)*np.sqrt(epsilon)*epsilon,epsilon))
     n_0.append(np.copy(y)[0])
     #Values we want to save (n_eps(t),norm deviation, total energy, central density n_0(t))
-
-    np.savez_compressed(path_save,t_data,n_eps,n_0,tot_E,Cons_N)
+    
+    if i%save_neps == 0: 
+        n_eps.append(np.copy(y)) 
+        np.savez_compressed(path_save,t_data,n_eps,n_0,tot_E,Cons_N)
     #Save a npz file (compressed) under path_save with these values
     #Use np.load(path_save) and extract files
     

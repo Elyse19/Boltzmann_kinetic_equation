@@ -20,6 +20,9 @@ import os.path
 from os import path
 from scipy.special import roots_legendre
 from scipy.special import roots_sh_legendre
+import warnings
+
+warnings.filterwarnings("ignore")
 
 ##Weights and coordinates for sh th gaussian quadrature
 

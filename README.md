@@ -27,7 +27,7 @@ $$
  C_{\text{int}}[n_\epsilon] = \mathcal{I} \int_{\epsilon_1,\epsilon_2,\epsilon_3>0} d\epsilon_1 d\epsilon_2 W(\epsilon,\epsilon_1,\epsilon_2) [(n_{\epsilon} + n_{\epsilon_3})n_{\epsilon_1}n_{\epsilon_2}- (n_{\epsilon_1} + n_{\epsilon_2})n_{\epsilon}n_{\epsilon_3}],
 $$
 
-with $\epsilon$ is a dimensionless energy in units of $\epsilon_0 = \frac{\hbar^2}{2m}(4\pi^2\rho_0)^{2/3}$, the dimensionless time $t$ is in units of $\hbar/\epsilon_0$ and $\mathcal{I} = g^2m^3\epsilon_0/(2\pi^3\hbar^6)$ is a dimensionless parameter. This equation is the same in all dimensions, except for the collision kernel $W(\epsilon,\epsilon_1,\epsilon_2)$ which in 3D is :
+with $\epsilon$ is a dimensionless energy in units of $\epsilon_0 = \frac{\hbar^2}{2m}(4\pi^2\rho_0)^{2/3}$, the dimensionless time $t$ is in units of $\hbar/\epsilon_0$ and $\mathcal{I} = g^2m^3\epsilon_0/(2\pi^3\hbar^6)$ is a dimensionless parameter. The energy is conserved, giving $\epsilon_3 = \epsilon_1 + \epsilon_2 - \epsilon$. This equation is the same in all dimensions, except for the collision kernel $W(\epsilon,\epsilon_1,\epsilon_2)$ which in 3D is :
 
 $$
 W(\epsilon,\epsilon_1,\epsilon_2) = \frac{\text{min}(\sqrt{\epsilon},\sqrt{\epsilon_1}, \sqrt{\epsilon_2}, \sqrt{\epsilon_3})}{\sqrt{\epsilon}}.
@@ -89,10 +89,24 @@ Integration :
 
 This time to solve the IVP, we use the [Strang splitting method](https://en.wikipedia.org/wiki/Strang_splitting) : 
 
-## Benchmark
+![split_step_image](split_step_method.png)
 
+This consists of solving the IVP for linear and nonlinear operators separately for half time steps, using the analytical solution (*) of the linear term (see Supplemental material [References](#references) for details) and the numerical method for the nonlinear term (see general QBE).
+
+## Precision and benchmarks
+
+To estimate the precision of our simulations, we monitor norm conservation (essentially controlled by the number of interpolation points and the precision of integrals). Typically, for a sinh tanh method of order $4$ (in practice this leads to $\simeq 100$ integration points) and $2000$ interpolation points, the norm conservation is satisfied at $10^{-4}$ at $t=50$ and $10^{-2}$ at $t=1000$.
+
+A useful benchmark for the general QBE is verifying that the distribution thermalizes to the Bose Einstein distribution at long times in the case of a quench in the normal phase:
+
+![BE_fit](BE_distrib_fit.pdf)
 
 ## Example plots
+
+Here are two examples for the general QBE (quench in the normal phase - red curves, quench across the BEC transition - blue curves):
+
+![normal_phase](n_eps_BE_distribution_diff_times.pdf)
+![BEC_phase](n_eps_diff_times_A=1_B=0.pdf)
 
 ## References
 

@@ -3,9 +3,11 @@
 The quantum Boltzmann kinetic equation (QBE) describes the dynamics of a Bose gas following a quench (abrupt change of a parameter of the Hamiltonian). This equation describes the evolution of state populations under the effect of inter-particle collisions. In this project, we solve the equation for a 3D Bose gas initially in the normal phase and quenched either in the normal phase or in the Bose Einstein condensate (BEC) phase. For now, the project is divided into two subprojects:
 
 1. General QBE solver 
-   -3D_kin_eq.py with two option modules: naive_integration.py, precise_integration.py
+   - 3D_kin_eq.py with two option modules:
+      - naive_integration.py
+      - precise_integration.py
 2. QBE solver for a degenerate Bose gas evolving in a weak spatial disordered potential under the influence of an external drive 
-   -split_step.py
+   - split_step.py
 
 ## Physics
 
@@ -34,10 +36,10 @@ $$
 Since the system is isolated, both the number of particles and the total energy are conserved : 
 
 $$
-\begin{pmatrix}
-\int_0^\infty d\epsilon \nu_\epsilon\, n_\epsilon(t)&=\rho_0, \\
+\begin{align}
+\int_0^\infty d\epsilon \nu_\epsilon\ n_\epsilon(t)&=\rho_0, \\
 \int_0^\infty d\epsilon \epsilon \nu_\epsilon\, n_\epsilon(t)&=\rho_0 E,
-\end{pmatrix}
+\end{align}
 $$
 
 where $\nu_\epsilon = (1/4\pi^2)(2m/\hbar^2)^{3/2}\sqrt{\epsilon}$ is the 3D density of states per unit volume.
@@ -58,11 +60,27 @@ $$
 
 with $\mathcal{D} = (F^2D/2)\epsilon_0^3$, $F$ being the amplitude of the driving force and $D$ the diffusion coefficient.
 
-## Installation
-
 ## Numerical method
 
+1. General QBE
+   
+The problem comes down to solving an initial value problem (IVP) of the form:
+
+$$
+\begin{align}
+    \partial_t Y(t) &= f(Y(t),t) \\
+    Y(t=0) &= Y_0,
+\end{align}
+$$
+
+where $Y(t) = n_\epsilon(t)$ and $Y_0 = n_\epsilon(t=0)$ are 1D arrays containing the energy distribution at a given time. To integrate this IVP, we use the standard fourth-order [Runge-Kutta method (RK4)](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods), for which the error of the integration is $O(h^4)$, where $h$ is the time-step. f(Y(t),t) is a double integral which can be calculated for a given $\epsilon$ with an interpolation of the $n_\epsilon(t)$ grid to calculate the integrand. The interpolation can be chosen to be either quadratic (which works in most cases) or using the [PCHIP method](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.html) which conserves the monotony of the function, which is useful for calming numerical instabilities in the UV. This code works with two options for the integration:
+
+If methodnaive_integration.py (integration on a 2D meshgrid using the Simpson method)
+
+2. QBE including the effect of disorder/drive
+
 ## Benchmark
+
 
 ## Example plots
 

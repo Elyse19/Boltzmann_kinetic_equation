@@ -73,7 +73,7 @@ $$
 \end{align}
 $$
 
-where $Y(t) = n_\epsilon(t)$ and $Y_0 = n_\epsilon(t=0)$ are 1D arrays containing the energy distribution at a given time. To integrate this IVP, we use the standard fourth-order [Runge-Kutta method (RK4)](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods), for which the error of the integration is $O(h^4)$, where $h$ is the time-step. f(Y(t),t) is a double integral which can be calculated for a given $\epsilon$ with an interpolation of the $n_\epsilon(t)$ grid to calculate the integrand. 
+where $Y(t) = n_\epsilon(t)$ and $Y_0 = n_\epsilon(t=0)$ are 1D arrays containing the energy distribution at a given time. To integrate this IVP, we use the standard fourth-order [Runge-Kutta method (RK4)](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods), for which the error of the integration is $O(h^4)$, where $h$ is the time-step. The r.h.s. of the equation f(Y(t),t) is a double integral which can be calculated for a given $\epsilon$ using an interpolation of the $n_\epsilon(t)$ grid to calculate the integrand. The loop over the different $\epsilon$ values is parallelized using the [joblib module](https://joblib.readthedocs.io/en/stable/).
 
 Interpolation :
    - If method_interp is set to 'quadratic' : quadratic interpolation method (which works well in most cases)
@@ -81,9 +81,13 @@ Interpolation :
 
 Integration : 
    - If method_int is set to 'naive' : the module naive_integration.py is used to calculate the double integral (integration on a 2D meshgrid using the Simpson method)
-   - If method_int is set to 'precise' : the module precise_integration.py is used to calculate the double integral (sinh tanh integration method over domains I,II,III,IV shown below and simplification using symmetry properties)
+   - If method_int is set to 'precise' : the module precise_integration.py is used to calculate the double integral ([sinh tanh integration method](#references) over domains I,II,III,IV using symmetry properties shown below)
+
+![kernel](kernel_3D.png)
 
 2. QBE including the effect of disorder/drive
+
+This time to solve the IVP, we use the [Strang splitting method](https://en.wikipedia.org/wiki/Strang_splitting) : 
 
 ## Benchmark
 
@@ -92,5 +96,5 @@ Integration :
 
 ## References
 
-[E. Gliott, A. Rançon, N. Cherroret, PRL **133**, 233403 (2024)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.133.233403)
-[H. Takahasi and M. Mori. PM. RIMS **9**, 721-741 (1974)](https://ems.press/content/serial-article-files/41766?nt=1)
+1. [E. Gliott, A. Rançon, N. Cherroret, PRL **133**, 233403 (2024)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.133.233403)
+2. [H. Takahasi and M. Mori. PM. RIMS **9**, 721-741 (1974)](https://ems.press/content/serial-article-files/41766?nt=1)

@@ -73,7 +73,7 @@ $$
 \end{align}
 $$
 
-where $Y(t) = n_\epsilon(t)$ and $Y_0 = n_\epsilon(t=0)$ are 1D arrays containing the energy distribution at a given time. To integrate this IVP, we use the standard fourth-order [Runge-Kutta method (RK4)](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods), for which the error of the integration is $O(h^4)$, where $h$ is the time-step. The r.h.s. of the equation f(Y(t),t) is a double integral which can be calculated for a given $\epsilon$ using an interpolation of the $n_\epsilon(t)$ grid to calculate the integrand. The loop over the different $\epsilon$ values is parallelized using the [joblib module](https://joblib.readthedocs.io/en/stable/).
+where $Y(t) = n_\epsilon(t)$ and $Y_0 = n_\epsilon(t=0)$ are 1D arrays containing the energy distribution at a given time. To integrate this IVP, we use the standard fourth-order [Runge-Kutta method (RK4)](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods), for which the error of the integration is $O(dt^4)$, where $dt$ is the time-step. The r.h.s. of the equation f(Y(t),t) is a double integral which can be calculated for a given $\epsilon$ using an interpolation of the $n_\epsilon(t)$ grid to calculate the integrand. The loop over the different $\epsilon$ values is parallelized using the [joblib module](https://joblib.readthedocs.io/en/stable/).
 
 Interpolation :
    - If method_interp is set to 'quadratic' : quadratic interpolation method (which works well in most cases)
@@ -101,12 +101,21 @@ A useful benchmark for the general QBE is verifying that the distribution therma
 
 ![BE_fit](BE_distrib_fit.pdf)
 
-## Example plots
+- Parameters : $\epsilon_c = 6$, $\mathcal{I} = 1$,  $\epsilon_{\text{min}} = 10^{-9}$, $\epsilon_{\text{max}} = 10^{2}$, $N=256$, $dt=0.01$
+- Norm conservation at $t=25$: $\simeq 10^{-3}$
 
-Here are two examples for the general QBE (quench in the normal phase - red curves, quench across the BEC transition - blue curves):
+## Examples
 
-- ![normal_phase](n_eps_BE_distribution_diff_times.pdf)
-- ![BEC_phase](n_eps_diff_times_A=1_B=0.pdf)
+Here are two examples of simulations for the general QBE for a gaussian initial distribution $n_\epsilon(t=0) = \frac{2}{\Gamma(3/4)\epsilon_c^{3/2}} e^{-\epsilon^2/\epsilon_c^2}$ with $\epsilon_c$ the quench parameter:
+
+- Quench in the normal phase: ![normal_phase](n_eps_BE_distribution_diff_times.pdf)
+   - Parameters : $\epsilon_c = 6$, $\mathcal{I} = 1$,  $\epsilon_{\text{min}} = 10^{-9}$, $\epsilon_{\text{max}} = 10^{2}$, $N=256$, $dt=0.01$
+   - Norm conservation at $t=25$: $\simeq 10^{-3}$
+- Quench across the BEC transition : ![BEC_phase](n_eps_diff_times_A=1_B=0.pdf)
+   - Parameters : $\epsilon_c = 1/\sqrt{5}$, $\mathcal{I} = 1$, $\epsilon_{\text{min}} = 10^{-12}$, $\epsilon_{\text{max}} = 10^{5}$, $N=2000$, $dt=0.01$
+   - Norm conservation at $t=6.5$ : $\simeq 10^{-7}$
+
+Examples for the QBE including the effect of disorder/drive can be found in [References](#references).
 
 ## References
 

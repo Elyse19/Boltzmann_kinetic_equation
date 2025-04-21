@@ -81,7 +81,7 @@ Interpolation :
 
 Integration : 
    - If method_int is set to 'naive' : the module naive_integration.py is used to calculate the double integral (integration on a 2D meshgrid using the Simpson method)
-   - If method_int is set to 'precise' : the module precise_integration.py is used to calculate the double integral ([sinh tanh integration method](#references) over domains I,II,III,IV using symmetry properties shown below)
+   - If method_int is set to 'precise' : the module precise_integration.py is used to calculate the double integral ([sinh-tanh quadrature method](https://en.wikipedia.org/wiki/Tanh-sinh_quadrature) over domains I,II,III,IV using symmetry properties shown below)
 
 ![kernel](kernel_3D.png)
 
@@ -95,7 +95,7 @@ This consists of solving the IVP for linear and nonlinear operators separately f
 
 ## Precision and benchmarks
 
-To estimate the precision of our simulations, we monitor norm conservation (essentially controlled by the number of interpolation points and the precision of integrals). Typically, for a sinh tanh method of order $4$ (in practice this leads to $\simeq 100$ integration points) and $2000$ interpolation points, the norm conservation is satisfied at $10^{-4}$ at $t=50$ and $10^{-2}$ at $t=1000$.
+To estimate the precision of our simulations, we monitor norm conservation (essentially controlled by the number of interpolation points and the precision of the integrals). Typically, for a sinh-tanh quadrature method of order $4$ (in practice this leads to $\simeq 100$ integration points) and $2000$ interpolation points, the norm conservation is satisfied at $10^{-4}$ at $t=50$ and $10^{-2}$ at $t=1000$.
 
 A useful benchmark for the general QBE is verifying that the distribution thermalizes to the Bose Einstein distribution at long times in the case of a quench in the normal phase:
 
@@ -105,10 +105,9 @@ A useful benchmark for the general QBE is verifying that the distribution therma
 
 Here are two examples for the general QBE (quench in the normal phase - red curves, quench across the BEC transition - blue curves):
 
-![normal_phase](n_eps_BE_distribution_diff_times.pdf)
-![BEC_phase](n_eps_diff_times_A=1_B=0.pdf)
+- ![normal_phase](n_eps_BE_distribution_diff_times.pdf)
+- ![BEC_phase](n_eps_diff_times_A=1_B=0.pdf)
 
 ## References
 
-1. [E. Gliott, A. Rançon, N. Cherroret, PRL **133**, 233403 (2024)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.133.233403)
-2. [H. Takahasi and M. Mori. PM. RIMS **9**, 721-741 (1974)](https://ems.press/content/serial-article-files/41766?nt=1)
+[E. Gliott, A. Rançon, N. Cherroret, PRL **133**, 233403 (2024)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.133.233403)

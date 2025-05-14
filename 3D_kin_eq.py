@@ -12,21 +12,19 @@ import scipy.integrate as integrate
 import scipy.special
 import scipy.interpolate as interpolate
 from scipy.interpolate import interp1d
-from scipy.optimize import curve_fit
 from scipy import fft
 from joblib import Parallel, delayed
 from scipy.special import iv, gamma, factorial
 import os.path
 from os import path
-plt.rcParams ['figure.dpi'] = 300
 import sys
 import warnings
-
 import time
 
 warnings.filterwarnings("ignore")
 
-sys.path.append('/users/jussieu/egliott/Documents/git_boltz/Boltzmann_kinetic_equation/')
+path = ''
+sys.path.append(path)
 
 
 A = 1 #Interaction prefactor
@@ -127,8 +125,6 @@ def tot(n_loc):
     return y_loc*A
 
 t0 = time.time()
-
-path = '/users/jussieu/egliott/Documents/git_boltz/Boltzmann_kinetic_equation/'
 
 name = '3D_Boltz_normal_'
 #name = '3D_Boltz_BEC_'

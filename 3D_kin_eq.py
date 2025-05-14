@@ -190,6 +190,8 @@ while t_i <= T:
         n_eps.append(y)    
         print('Divergence')
         print('t_div = '+ str(round(t_i,2)))
+        np.savez_compressed(path_save,t_data,n_eps,n_0,tot_E,Cons_N)
+
         break
     #Break loop when norm is not conserved and starts to diverge
     #If this quantity diverges, either there is a numerical issue or the kinetic equation is no longer valid
